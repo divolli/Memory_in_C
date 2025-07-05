@@ -90,7 +90,6 @@ void *stack_pop(stack_t *stack){
   if(!stack || stack->count == 0) return NULL;
 
   stack->count--;
-  // do we need to free data + count item? Otherwise it will be just garbage, interesting.
   return *(stack->data + stack->count);
 }
 
