@@ -12,13 +12,22 @@ typedef struct Frame {
   stack_t *references;
 } frame_t;
 
+
+
 /// MARK & SWEEP FUNC
 void mark(vm_t *vm);
 void trace(vm_t *vm);
 void sweep(vm_t *vm);
+// Helper functions for "trace"
+void trace_blacken_object(stack_t *gray_objects, snake_obj_t *ref);
+void trace_mark_object(stack_t *gray_objects, snake_obj_t *ref);
+
+
+// MAIN FUNC FOR GARBAGE COLLECTOR
+void vm_collect_garbage(vm_t *vm);
+
 
 /// VM FUNC
-void vm_collect_garbage(vm_t *vm);
 vm_t *vm_new(void);
 void vm_free(vm_t *vm);
 void vm_track_object(vm_t *vm, snake_obj_t *obj);

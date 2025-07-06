@@ -3,21 +3,102 @@
 #include "stack.h"
 #include <stdlib.h>
 #include <string.h>
+#include <stdio.h>
 
 
 /// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ MARK & SWEEP FUNC ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-void mark(vm_t *vm){
-
-}
 
 
-void trace(vm_t *vm){
+// MAIN GARBAGE FUNC
+void vm_collect_garbage(vm_t *vm) {
+  if(!vm) return;
+
+  mark(vm);
+  trace(vm);
+  sweep(vm);
 
 }
 
 
 void sweep(vm_t *vm){
+  if(!vm) return;
 
+  for(int i = 0; i < (int)vm->objects->count; ++i){
+    snake_obj_t *obj = vm->objects->data[i];
+    if(obj->is_marked) obj->is_marked = 0;
+    snek_object_free(obj);
+    vm->objects->data[i] = NULL;
+  }
+
+  stack_remove_nulls(vm->objects);
+}
+
+
+void mark(vm_t *vm){
+  if (!vm) return;
+
+  for (int i = 0; i < (int)vm->frames->count; ++i){
+    frame_t *frame = vm->frames->data[i];
+
+    for (int j = 0; j < (int)frame->references->count; ++j){
+      snake_obj_t *obj = frame->references->data[j];
+      obj->is_marked = 1;
+    }
+  }
+}
+
+
+void trace(vm_t *vm){
+  if (!vm) return;
+
+  stack_t *gray_obj = stack_new(8);
+  if(!gray_obj) return;
+
+  for (int i = 0; i < (int)vm->objects->count; ++i){
+    snake_obj_t *obj = vm->objects->data[i];
+    if(obj && obj->is_marked) stack_push(gray_obj, obj);
+  }
+
+  while (gray_obj->count > 0){
+    snake_obj_t *poped  = stack_pop(gray_obj);
+    trace_blacken_object(gray_obj, poped);
+  }
+
+  stack_free(gray_obj);
+}
+
+
+void trace_blacken_object(stack_t *gray_objects, snake_obj_t *obj) {
+  if (!obj) return;
+
+  switch (obj->kind){
+    case INTEGER: return;
+    case FLOAT: return;
+    case STRING: return;
+    case VECTOR:
+      trace_mark_object(gray_objects,obj->data.v_vector.x);
+      trace_mark_object(gray_objects,obj->data.v_vector.y);
+      trace_mark_object(gray_objects,obj->data.v_vector.z);
+      return;
+    case ARRAY:
+      snake_array_t arr = obj->data.v_array;
+      for (int i = 0; i < (int)arr.size; ++i){
+        trace_mark_object(gray_objects, snake_array_get(obj, i));
+      }
+      return;
+    default:
+      printf("Some Error occurs\n");
+      return;
+  }
+}
+
+
+void trace_mark_object(stack_t *gray_objects, snake_obj_t *obj) {
+  if (!obj) return;
+  if (obj->is_marked) return;
+
+  obj->is_marked = 1;
+  stack_push(gray_objects, (void *)obj);
 }
 
 
@@ -47,12 +128,12 @@ vm_t *vm_new(void){
 
 void vm_free(vm_t *vm){
   if (!vm) return;
-  for(int i = 0; i < vm->frames->count; ++i){
+  for(int i = 0; i < (int)vm->frames->count; ++i){
     frame_free(vm->frames->data[i]);
   }
   stack_free(vm->frames);
 
-  for(int i = 0; i < vm->frames->count; ++i){
+  for(int i = 0; i < (int)vm->frames->count; ++i){
     frame_free(vm->objects->data[i]);
   }
   stack_free(vm->objects);
@@ -117,9 +198,8 @@ snake_obj_t *new_vm_snake_obj(vm_t *vm){
   snake_obj_t *obj = calloc(1, sizeof(snake_obj_t));
   if(!obj) return NULL;
 
-  obj->is_marked = 0;
-
   vm_track_object(vm, obj);
+  obj->is_marked = 0;
   return obj;
 }
 
