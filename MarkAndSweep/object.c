@@ -3,6 +3,70 @@
 #include <string.h>
 #include <stdio.h>
 
+
+/*
+
+// Implementing new object with recount
+snake_obj_t *new_snake_object(){
+  snake_obj_t *new = (snake_obj_t *) malloc(sizeof(snake_obj_t));
+  if (!new) return NULL;
+
+  new->refcount = 1;
+  return new;
+}
+
+
+void refcount_inc(snake_obj_t *obj){
+  if (!obj) return;
+  obj->refcount++;
+}
+
+
+void refcount_dec(snake_obj_t *obj){
+  if (!obj) return;
+
+  obj->refcount--;
+  if (obj->refcount == 0){
+    refcount_free(obj);
+  }
+}
+
+
+void refcount_free(snake_obj_t *obj){
+  if(!obj) return;
+
+  switch (obj->kind){
+    case INTEGER : break;
+    case FLOAT : break;
+    case STRING:
+      free(obj->data.v_string);
+      break;
+    case VECTOR:
+      refcount_dec(obj->data.v_vector.x);
+      refcount_dec(obj->data.v_vector.y);
+      refcount_dec(obj->data.v_vector.z);
+      break;
+    case ARRAY:
+      snake_array_t arr = obj->data.v_array;
+      for (int i = 0 ; i < arr.size; ++i){
+        refcount_dec(*(arr.elements + i));
+      }
+      free(obj->data.v_array.elements);
+      break;
+    default:
+      printf("Some error\n");
+      break;
+  }
+
+  free(obj);
+}
+
+*/
+
+
+// ~~~~~~~~~~~~~~~~~~~~~~~~~ MAIN OBJECT UTILS ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
 snake_obj_t *new_snake_int(int value){
   snake_obj_t *new = (snake_obj_t *) malloc(sizeof(snake_obj_t));
   if (!new) return NULL;
@@ -43,6 +107,13 @@ snake_obj_t *new_snake_vector(snake_obj_t *x, snake_obj_t *y, snake_obj_t *z){
   if (!new) return NULL;
 
   new->kind = VECTOR;
+  /*
+  // increment refcount
+  refcount_inc(x);
+  refcount_inc(y);
+  refcount_inc(z);
+  */
+
   new->data.v_vector.x = x;
   new->data.v_vector.y = y;
   new->data.v_vector.z = z;
@@ -74,6 +145,14 @@ int snake_array_set(snake_obj_t *snake_obj, size_t index, snake_obj_t *value){
   if (!snake_obj || !value) return 0;
   if (snake_obj->kind != ARRAY) return 0;
   if (snake_obj->data.v_array.size <= index) return 0;
+
+  /*
+  // increment a new value
+  refcount_inc(value);
+  if (*(snake_obj->data.v_array.elements + index) != NULL){
+     refcount_dec(*(snake_obj->data.v_array.elements + index));
+  }
+  */
 
   *(snake_obj->data.v_array.elements + index) = value;
   return 1;
@@ -133,7 +212,6 @@ snake_obj_t *snake_add(snake_obj_t *a, snake_obj_t *b){
       char *new_string = (char *) malloc(sizeof(char) * length);
       strcat(new_string, a->data.v_string);
       strcat(new_string, b->data.v_string);
-      // not returning just new string beacause we need free previous alloc string
       snake_obj_t *str_obj = new_snake_string(new_string);
       free(new_string);
       return str_obj;
@@ -177,3 +255,6 @@ snake_obj_t *snake_add(snake_obj_t *a, snake_obj_t *b){
       return NULL;
   }
 }
+
+
+

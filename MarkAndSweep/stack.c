@@ -1,53 +1,6 @@
-#include <stddef.h>
+#include "stack.h"
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
-
-// generic swap
-void swap(void *val1, void *val2, size_t size);
-
-// Stack with generic pointers
-typedef struct Stack {
-  size_t count;
-  size_t capacity;
-  void ** data;
-} stack_t;
-
-// new stack function
-stack_t *stack_new(size_t capacity);
-// stack push function
-void stack_push(stack_t *stack, void *obj);
-// stack pop function
-void *stack_pop(stack_t *stack);
-// stack free function
-void stack_free(stack_t *stack);
-
-int main(void){
-  printf("Starting memory allocation tutorial\n");
-  return 0;
-}
-
-
-// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ SWAP ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-// generic swap
-void swap(void *val1, void *val2, size_t size){
-  if (!val1 || !val2 || size < 1) return ; // return in case of incorrect parameters
-
-  void *tmp = (void *) malloc(size);
-  if (!tmp) return;
-
-  // tmp = a
-  memcpy(tmp, val1, size);
-
-  // a = b
-  memcpy(val1, val2, size);
-
-  // b = tmp
-  memcpy(val2, tmp, size);
-
-  free(tmp);
-}
 
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ STACK FUNCTIONS ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -100,4 +53,24 @@ void stack_free(stack_t *stack){
 
   free(stack);
   stack = NULL;
+}
+
+
+void stack_remove_nulls(stack_t *stack) {
+  size_t new_count = 0;
+
+  // Iterate through the stack and compact non-NULL pointers.
+  for (size_t i = 0; i < stack->count; ++i) {
+    if (stack->data[i] != NULL) {
+      stack->data[new_count++] = stack->data[i];
+    }
+  }
+
+  // Update the count to reflect the new number of elements.
+  stack->count = new_count;
+
+  // Optionally, you might want to zero out the remaining slots.
+  for (size_t i = new_count; i < stack->capacity; ++i) {
+    stack->data[i] = NULL;
+  }
 }
